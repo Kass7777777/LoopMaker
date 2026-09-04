@@ -1,0 +1,10 @@
+# Local diagnostics, renders, and backups
+outputs/
+.workbuddy/
+
+# Python cache and temporary files
+__pycache__/
+*.py[cod]
+*.tmp
+.DS_Store
+Thumbs.db
