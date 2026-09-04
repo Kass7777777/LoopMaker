@@ -564,4 +564,10 @@ test("delete reports partial failure when index update throws", function()
   assert_equal(nil, stored(store, presets.preset_key("Doomed")))
 end)
 
+test("Region preference survives serialization and older presets default off", function()
+  local restored = assert(presets.decode_settings(presets.encode_settings({create_regions=true})))
+  assert_equal(true, restored.create_regions)
+  local legacy = presets.encode_settings({}):gsub("create_regions=[^;]*;", "")
+  assert_equal(false, assert(presets.decode_settings(legacy)).create_regions)
+end)
 return true

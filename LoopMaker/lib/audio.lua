@@ -431,8 +431,9 @@ local function read_accessor(reaper_api, accessor, take, target_project_time,
 
   local accessor_start = reaper_api.GetAudioAccessorStartTime(accessor)
   local accessor_end = reaper_api.GetAudioAccessorEndTime(accessor)
+  local target_accessor_time = target_project_time - metadata.item_position
   local range, range_reason = M.search_buffer_range(
-    target_project_time,
+    target_accessor_time,
     window_seconds,
     accessor_start,
     accessor_end,
@@ -463,7 +464,7 @@ local function read_accessor(reaper_api, accessor, take, target_project_time,
     buffer_options)
 
   if crossing then
-    local project_time = range.start_time
+    local project_time = metadata.item_position + range.start_time
       + crossing.frame_position / metadata.sample_rate
     local source_time, source_reason = source_time_for_project(metadata, project_time)
     if not source_time then
@@ -493,7 +494,8 @@ local function read_accessor(reaper_api, accessor, take, target_project_time,
 
   local fallback_frame = range.target_frame
   local frame_position = fallback_frame - 1
-  local project_time = range.start_time + frame_position / metadata.sample_rate
+  local project_time = metadata.item_position
+    + range.start_time + frame_position / metadata.sample_rate
   local source_time, source_reason = source_time_for_project(metadata, project_time)
   if not source_time then
     return nil, source_reason

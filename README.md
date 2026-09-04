@@ -2,7 +2,7 @@
 
 Create seamless audio loops in REAPER 7 with a Lua ReaScript and ReaImGui interface.
 
-LoopMaker 可将选中的音频 Item 制作为循环变体，支持时间选区铺满、交叉淡化、过零点分析、命名与颜色，以及预览、Apply、Cancel 和原生 Glue。
+LoopMaker 可将选中的音频 Item 制作为循环变体，支持时间选区铺满、交叉淡化、过零点分析、命名与颜色、按循环段创建共享 Region，以及预览、Apply、Cancel 和原生 Glue。
 
 ## 安装与使用
 
@@ -24,7 +24,7 @@ python LoopMaker/tests/run.py --modules loop_builder,app,state
 python LoopMaker/tests/run.py --full --syntax
 ```
 
-当前版本包含 UI 易用性改进，以及 Loops 时间选区返回值、源音频采样尾差和 Glue Item 身份误判修复。431 项回归测试与 38 个 Lua 文件语法检查通过；独立 REAPER 7.79 工程验证了 1、5、10 个 Loops 的 Glue/Apply、导出文件和撤销。自动化验证不替代实际素材听感验收。
+当前版本新增 Apply 时创建共享 Region，并修复非零 Item 起点的过零点搜索和多轨缩短循环后的交叉淡化位置。443 项回归测试与 40 个 Lua 文件语法检查通过；独立 REAPER 7.79 工程验证了不同起点/长度的两轨素材、1/5 个变体、10%/50% 淡化、Glue、Region 边界和名称、已有 Region 保留，以及一次 Undo 和 Cancel。自动化验证不替代实际素材听感验收。
 
 Shepard Tone 属于实验性功能，优先级很低。
 

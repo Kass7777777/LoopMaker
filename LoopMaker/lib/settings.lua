@@ -4,6 +4,7 @@ local M = {}
 
 local DEFAULTS = {
   glue = true,
+  create_regions = false,
   loops = 1,
   position_space = 0,
   shuffle = false,

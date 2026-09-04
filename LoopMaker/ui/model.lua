@@ -5,6 +5,7 @@ local M = {}
 
 local PRESENTATION_KEYS = {
   glue = true,
+  create_regions = true,
   show_shepard = true,
   show_zc = true,
   show_name = true,

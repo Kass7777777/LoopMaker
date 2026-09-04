@@ -278,6 +278,29 @@ local function fake_environment(snapshot_count, config)
         return outputs
       end,
     },
+    regions = {
+      plan_outputs = function(outputs, sample_rate, settings, color)
+        calls[#calls + 1] = "plan regions"
+        observations.region_outputs = outputs
+        observations.region_sample_rate = sample_rate
+        observations.region_settings = settings
+        observations.region_color = color
+        if config.region_plan_reason then return nil, config.region_plan_reason end
+        return { { start = 1, finish = 2, name = "Loop_01", color = color } }
+      end,
+      create = function(_, project, planned)
+        calls[#calls + 1] = "create regions:" .. tostring(project)
+        observations.region_plans = planned
+        if config.region_create_reason then return nil, config.region_create_reason end
+        return { { index = 17 } }
+      end,
+      remove = function(_, project, created)
+        calls[#calls + 1] = "remove regions:" .. tostring(project)
+        observations.removed_regions = created
+        if config.region_remove_reason then return nil, config.region_remove_reason end
+        return true
+      end,
+    },
     shepard = {
       plan_items = function(received, settings)
         calls[#calls + 1] = "plan shepard"
@@ -1972,4 +1995,60 @@ helper.test("time-selection write exceptions still fail rebuild", function()
   local ok, reason = app:tick(10)
   helper.assert_equal(nil, ok)
   helper.assert_true(reason:find("write unavailable", 1, true))
+end)
+
+helper.test("Apply creates Regions after output work and commits them together", function()
+  local api, dependencies, _, calls, observations = fake_environment(1)
+  local app = app_module.new(api, { dependencies = dependencies,
+    settings = { glue = false, create_regions = true } })
+  helper.assert_true(app:start())
+  local applied, reason = app:apply()
+  helper.assert_true(applied, tostring(reason))
+  helper.assert_equal(48000, observations.region_sample_rate)
+  helper.assert_true(call_index(calls, "build normal") < call_index(calls, "plan regions"))
+  helper.assert_true(call_index(calls, "plan regions") < call_index(calls, "create regions:captured-project"))
+  helper.assert_true(call_index(calls, "create regions:captured-project") < call_index(calls, "apply"))
+end)
+
+helper.test("Region creation failure restores the preview transaction", function()
+  local api, dependencies, tx, calls = fake_environment(1, {
+    region_create_reason = "region write failed",
+  })
+  local app = app_module.new(api, { dependencies = dependencies,
+    settings = { glue = false, create_regions = true } })
+  helper.assert_true(app:start())
+  local applied, reason = app:apply()
+  helper.assert_equal(nil, applied)
+  helper.assert_true(reason:find("region write failed", 1, true) ~= nil)
+  helper.assert_equal(1, count_call(calls, "restore"))
+  helper.assert_equal(true, tx.active)
+end)
+
+helper.test("commit failure removes created Regions before restoring Items", function()
+  local api, dependencies, _, calls = fake_environment(1, {
+    apply_commit_reason = "commit failed",
+  })
+  local app = app_module.new(api, { dependencies = dependencies,
+    settings = { glue = false, create_regions = true } })
+  helper.assert_true(app:start())
+  local applied = app:apply()
+  helper.assert_equal(nil, applied)
+  helper.assert_true(call_index(calls, "create regions:captured-project")
+    < call_index(calls, "remove regions:captured-project"))
+  helper.assert_true(call_index(calls, "remove regions:captured-project")
+    < call_index(calls, "restore"))
+end)
+helper.test("commit exceptions remove Regions and restore Items", function()
+  local api, dependencies, tx, calls = fake_environment(1, {
+    apply_commit_error = "commit exception",
+  })
+  local app = app_module.new(api, {dependencies=dependencies,
+    settings={glue=false, create_regions=true}})
+  helper.assert_true(app:start())
+  local applied, reason = app:apply()
+  helper.assert_equal(nil, applied)
+  helper.assert_true(reason:find("commit exception", 1, true) ~= nil)
+  helper.assert_true(call_index(calls, "remove regions:captured-project")
+    < call_index(calls, "restore"))
+  helper.assert_equal(true, tx.active)
 end)

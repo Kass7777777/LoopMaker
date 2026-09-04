@@ -281,7 +281,7 @@ local function successful_fake(samples, configuration)
   configuration = configuration or {}
   local sample_rate = configuration.sample_rate or 1000
   local channels = configuration.channels or 1
-  local accessor_start = configuration.accessor_start or 10
+  local accessor_start = configuration.accessor_start or 2
   local accessor_end = configuration.accessor_end
     or (accessor_start + (#samples / channels) / sample_rate)
   local state = { destroyed = 0, calls = {}, allocations = {} }
@@ -399,7 +399,7 @@ test("find_zero_crossing reads half-open samples and returns interpolated projec
   assert_equal(take, state.item_take)
   assert_equal(take, state.metadata_take)
   assert_equal(1, #state.calls)
-  assert_close(10, state.calls[1].start_time)
+  assert_close(2, state.calls[1].start_time)
   assert_equal(4, state.calls[1].frame_count)
   assert_equal(4, state.allocations[1])
   assert_equal(1, state.destroyed)
@@ -414,6 +414,21 @@ test("find_zero_crossing reads half-open samples and returns interpolated projec
   assert_equal(1, result.channels)
 end)
 
+test("find_zero_crossing translates non-zero Item project time to Take accessor time", function()
+  local api, state = successful_fake({ 0.8, 0.2, -0.1, -0.4 }, {
+    item_position = 8,
+    accessor_start = 2,
+    accessor_end = 2.004,
+  })
+
+  local result, reason = audio.find_zero_crossing(
+    api, {}, 10.002, 0.002, { distance_weight = 0 })
+
+  assert_equal(nil, reason)
+  assert_close(2, state.calls[1].start_time)
+  assert_close(10.001666666666667, result.project_time)
+  assert_close(6.003333333333334, result.source_time)
+end)
 test("find_zero_crossing reads chunks with overlap and finds a cross-chunk boundary", function()
   local api, state = successful_fake({ 1, 1, 1, -1, -1, -1 })
 
@@ -429,8 +444,8 @@ test("find_zero_crossing reads chunks with overlap and finds a cross-chunk bound
     assert_true(call.frame_count <= 3, "chunk " .. index .. " exceeded chunk_frames")
     assert_true(state.allocations[index] <= 3, "allocation exceeded chunk_frames")
   end
-  assert_close(10, state.calls[1].start_time)
-  assert_close(10.002, state.calls[2].start_time)
+  assert_close(2, state.calls[1].start_time)
+  assert_close(2.002, state.calls[2].start_time)
   assert_equal(1, state.destroyed)
 end)
 

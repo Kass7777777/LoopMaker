@@ -1324,8 +1324,27 @@ local function fit_plan_to_length(plan, target_length)
       fitted, fitted.source_project_start, fitted.source_end,
       fitted.boundary_anchor)
   else
+    -- Keep the overlap centered in the output slot across source layers.
+    -- Its source anchor remains the independently analyzed zero crossing.
+    local safety = fitted.settings.loops > 1 and M.BOUNDARY_SAFETY_FADE or 0
+    local crossfade = math.min(
+      source_span_for_output_length(target_length, fitted.settings) - target_length,
+      math.max(0, target_length - 2 * safety))
+    local half_span = (target_length + crossfade) / 2
+    local centered_start = fitted.boundary_anchor - half_span
+    local centered_end = fitted.boundary_anchor + half_span
     local geometry
-    geometry, reason = matched_interval(fitted, target_length)
+    if centered_start >= fitted.source_project_start - EPSILON
+        and centered_end <= fitted.source_end + EPSILON then
+      geometry = geometry_for_interval(
+        centered_start, centered_end, fitted.boundary_anchor, fitted.settings)
+      if geometry and math.abs(geometry.loop_length - target_length) > EPSILON then
+        geometry = nil
+      end
+    end
+    if not geometry then
+      geometry, reason = matched_interval(fitted, target_length)
+    end
     if geometry then
       rebuilt, reason = rebuild_plan_geometry(
         fitted, geometry.source_project_start, geometry.source_end,

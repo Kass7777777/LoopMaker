@@ -226,6 +226,8 @@ local function draw_position(api, ctx, app, now)
   hint(api, ctx, "Snap source boundaries to whole seconds. This may limit valid loop lengths.")
   checkbox(api, ctx, app, "Match overlapping item lengths", "match_overlap", now)
   hint(api, ctx, "Match available loop lengths for overlapping items on different tracks.")
+  checkbox(api, ctx, app, "Create regions on Apply", "create_regions", now)
+  hint(api, ctx, "One Region per loop slot. Tracks with the same start and end share a Region.")
 end
 
 local function draw_crossfade(api, ctx, app, now)

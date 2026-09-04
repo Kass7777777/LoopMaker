@@ -1,5 +1,6 @@
 local loop_builder_module = require("lib.loop_builder")
 local settings_module = require("lib.settings")
+local regions_module = require("lib.regions")
 local shepard_module = require("lib.shepard")
 local state_module = require("lib.state")
 local ui_model_module = require("ui.model")
@@ -296,6 +297,7 @@ function M.new(reaper_api, options)
     dependencies = {
       loop_builder = dependencies.loop_builder or loop_builder_module,
       shepard = dependencies.shepard or shepard_module,
+      regions = dependencies.regions or regions_module,
       state = dependencies.state or state_module,
       ui_model = model_module,
     },
@@ -369,6 +371,7 @@ function App:rebuild(initial)
   local snapshots, snapshot_reason = builder.snapshot_selected(
     self.api, self.project)
   if not snapshots then return fail(self, snapshot_reason) end
+  self.snapshots = snapshots
   self.dependencies.ui_model.set_selected_count(self.model, #snapshots)
   self.outputs = {}
   self.has_preview = false
@@ -625,6 +628,16 @@ function App:apply()
     if not released then return nil, release_reason end
   end
 
+  local planned_regions
+  if self.model.settings.create_regions then
+    local rate, rate_reason = resolve_sample_rate(self.api, self.project, self.snapshots)
+    if not rate then return nil, rate_reason end
+    local called, planned, plan_reason = call_dependency(
+      self.dependencies.regions, "plan_outputs", self.outputs, rate,
+      self.model.settings, self.model.settings.color_items and self.color or 0)
+    if not called or not planned then return nil, called and plan_reason or planned end
+    planned_regions = planned
+  end
   if self.model.settings.glue then
     local called, glued, glue_reason, _, invoked = call_tracked_dependency(
       self, self.dependencies.loop_builder, "glue_outputs",
@@ -644,8 +657,26 @@ function App:apply()
     self.outputs = glued
   end
 
-  local applied, reason = self.transaction:mark_applied()
+  local created_regions
+  if planned_regions then
+    local called, created, create_reason = call_dependency(
+      self.dependencies.regions, "create", self.api, self.project, planned_regions)
+    if not called or not created then
+      return fail_after_apply(self, called and create_reason or created, self.model.warnings)
+    end
+    created_regions = created
+  end
+
+  local called, applied, reason = call_transaction(self.transaction, "mark_applied")
+  if not called then reason, applied = applied, nil end
   if not applied then
+    if created_regions then
+      local removed_call, removed, remove_reason = call_dependency(
+        self.dependencies.regions, "remove", self.api, self.project, created_regions)
+      if not removed_call or not removed then
+        reason = with_cleanup_error(reason, removed_call and remove_reason or removed)
+      end
+    end
     if transaction_is_active(self.transaction) then
       return fail_after_apply(self, reason, self.model.warnings)
     end

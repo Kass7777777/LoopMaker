@@ -214,3 +214,11 @@ helper.test("fill summary rejects missing malformed and inconsistent fields", fu
     helper.assert_equal(nil, result)
   end
 end)
+
+helper.test("Region toggle defaults off and does not rebuild audio", function()
+  local model = ui_model.new({})
+  helper.assert_equal(false, model.settings.create_regions)
+  helper.assert_true(ui_model.set(model, "create_regions", true))
+  helper.assert_equal(true, model.settings.create_regions)
+  helper.assert_equal(false, model.dirty)
+end)

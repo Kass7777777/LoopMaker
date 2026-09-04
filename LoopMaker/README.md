@@ -65,6 +65,7 @@ LoopMaker 是一个面向 REAPER 7 的 Lua ReaScript，用来把选中的音频 
 
 | 参数 | 作用 |
 |---|---|
+| Create regions on Apply | 默认关闭。Apply 时为每个循环段创建 Region；起止位置相同的多轨 Loop 共用一个 Region。名称使用首层素材的命名设置，按时间顺序编号；Cancel 不创建，Undo 与 Item 一起撤销。 |
 | Glue on Apply | 仅在 Apply 时调用 REAPER 原生 Glue。关闭时保留可编辑的拼接 Item。 |
 | Loops | 普通模式下表示每个 source 先生成的唯一变体数，不保证等于最终 Item 数：有时间选区时，唯一变体会按槽位重复使用并铺满选区；无时间选区且 `Loops > 1` 时，Item 会被等分为对应数量的不同取料区间。Shepard 模式下决定层数，层数为 `2 ^ Loops`。 |
 | Position space | 无时间选区时控制多个输出之间的间隔，单位为秒。有时间选区时控件禁用、实际间距强制为 0，但设置值会保留，退出铺满模式后恢复使用。 |
@@ -74,7 +75,7 @@ LoopMaker 是一个面向 REAPER 7 的 Lua ReaScript，用来把选中的音频 
 
 ### 时间选区铺满与活动采样率
 
-时间选区只定义输出覆盖范围，不再直接定义单个 Loop 的长度。LoopMaker 先按 `Loops` 生成完整的唯一变体集，再根据选区总样本数统一缩短所有变体到同一槽长，并以整数样本边界连续排列；`slot_count × slot_samples = total_samples`，最后一个槽位精确结束在量化后的选区终点。多个 source 会共用同一变体序列和槽位位置。
+时间选区只定义输出覆盖范围，不再直接定义单个 Loop 的长度。LoopMaker 先按 `Loops` 生成完整的唯一变体集，再根据选区总样本数统一缩短所有变体到同一槽长，并以整数样本边界连续排列；`slot_count × slot_samples = total_samples`，最后一个槽位精确结束在量化后的选区终点。多个 source 会共用同一变体序列和槽位位置。缩短循环适配槽位时，在素材边界允许的范围内围绕过零点对称取料，使各轨交叉淡化位于槽位中央。
 
 样本计算使用以下活动采样率优先级：
 

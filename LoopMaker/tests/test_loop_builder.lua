@@ -2437,5 +2437,28 @@ test("snapshot rounding never expands shorter Items or guesses missing sample ra
   end
 end)
 
+test("time-selection fitting aligns crossfades across offset source layers", function()
+  local settings = base_settings({ loops = 1, cf_ratio = 0.1, match_overlap = false })
+  local long = snapshot({ item = {}, take = {}, track = {},
+    position = 10, length = 29, start_offset = 0, playrate = 1,
+    source_length = 29 })
+  local short = snapshot({ item = {}, take = {}, track = {},
+    position = 25, length = 7.0766938819381, start_offset = 0, playrate = 1,
+    source_length = 10 })
+  local unique = analyzed_unique_variations({ long, short }, settings)
+  local expanded, summary = loop_builder.fill_time_selection(
+    unique, { start = 100, finish = 140 }, 100, settings)
+
+  assert_equal(2 * summary.slot_count, #expanded)
+  local expected_center = summary.slot_length / 2
+  for source = 0, 1 do
+    local plan = expanded[source * summary.slot_count + 1]
+    assert_equal(2, #plan.components)
+    local overlap_start = plan.components[2].position - plan.output_position
+    local overlap_end = plan.components[1].length
+    assert_close(expected_center, (overlap_start + overlap_end) / 2, 1e-8)
+    assert_close(plan.crossfade_length, overlap_end - overlap_start, 1e-8)
+  end
+end)
 
 return true

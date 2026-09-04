@@ -340,3 +340,11 @@ helper.test("transport Stop guidance remains visible with a preview error", func
   helper.assert_true(contains(o.wrapped_texts, "Error: preview failed"))
   helper.assert_true(contains(o.wrapped_texts, "Stop playback in REAPER to update or finish."))
 end)
+
+helper.test("Region checkbox writes the Apply-only setting", function()
+  local app = fake_app(true)
+  local options = { checkbox_results = { ["Create regions on Apply"] = true } }
+  draw(options, app)
+  helper.assert_equal(false, find_control(options, "Create regions on Apply").value)
+  helper.assert_equal(true, app.model.settings.create_regions)
+end)

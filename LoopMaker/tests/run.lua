@@ -28,6 +28,7 @@ local modules = {
   "tests.test_naming",
   "tests.test_presets",
   "tests.test_timeline_fill",
+  "tests.test_regions",
   "tests.test_loop_builder",
   "tests.test_shepard",
   "tests.test_ui_model",
