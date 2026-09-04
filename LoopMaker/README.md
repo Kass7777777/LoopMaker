@@ -47,7 +47,7 @@ LoopMaker 是一个面向 REAPER 7 的 Lua ReaScript，用来把选中的音频 
 
 ## 界面布局
 
-- 顶部固定显示 Glue、预设、Loops、Cancel / Preview / Apply；展开或滚动参数时，主操作仍在顶部。
+- 顶部右侧并排显示 Create regions on Apply 与 Glue on Apply；顶部固定显示预设、Loops、Cancel / Preview / Apply；展开或滚动参数时，主操作仍在顶部。
 - Loops 滑块用于快速调整，右侧数值框可精确输入普通模式的 1–1000；滑块初始范围为 1–32，输入更大数值后扩展，拖动过程中范围保持稳定。
 - Position 和 Crossfade 默认展开；Zero-Crossing、Name 可按需折叠。Shepard Tone 放在最下方，普通模式默认收起。
 - 参数区单独滚动，窗口可调整大小；控件宽度随窗口和当前字体尺寸变化。

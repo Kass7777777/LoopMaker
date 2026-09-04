@@ -226,8 +226,7 @@ local function draw_position(api, ctx, app, now)
   hint(api, ctx, "Snap source boundaries to whole seconds. This may limit valid loop lengths.")
   checkbox(api, ctx, app, "Match overlapping item lengths", "match_overlap", now)
   hint(api, ctx, "Match available loop lengths for overlapping items on different tracks.")
-  checkbox(api, ctx, app, "Create regions on Apply", "create_regions", now)
-  hint(api, ctx, "One Region per loop slot. Tracks with the same start and end share a Region.")
+
 end
 
 local function draw_crossfade(api, ctx, app, now)
@@ -355,7 +354,10 @@ function M.draw(api, ctx, app, ui, callbacks, now)
       local top_width = available(api, ctx)
       if api.ImGui_AlignTextToFramePadding then api.ImGui_AlignTextToFramePadding(ctx) end
       api.ImGui_Text(ctx, "LOOPMAKER")
-      api.ImGui_SameLine(ctx, math.max(u * 12, top_width - u * 10))
+      api.ImGui_SameLine(ctx, math.max(u * 7, top_width - u * 23))
+      checkbox(api, ctx, app, "Create regions on Apply", "create_regions", now)
+      hint(api, ctx, "One Region per loop slot. Tracks with the same start and end share a Region.")
+      api.ImGui_SameLine(ctx)
       checkbox(api, ctx, app, "Glue on Apply", "glue", now)
       hint(api, ctx, "Create one glued item per output when you apply.")
       draw_presets(api, ctx, app, ui, callbacks)
